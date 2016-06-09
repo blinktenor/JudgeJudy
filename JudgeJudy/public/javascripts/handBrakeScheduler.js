@@ -7,44 +7,74 @@ var path = require('path');
 
 
 module.exports.scheduleJob = function () {
-    var j = schedule.scheduleJob('*/5 * * * * *', function () {
+    var cronString = properties.get('jobTime.second') + " "
+            + properties.get('jobTime.minute') + " "
+            + properties.get('jobTime.hour') + " "
+            + properties.get('jobTime.day.of.month') + " "
+            + properties.get('jobTime.month') + " "
+            + properties.get('jobTime.day.of.week');
+    var j = schedule.scheduleJob(cronString, function () {
         var now = new Date();
 
         var pathToInput = properties.get('folder.input');
+        var pathToOutput = properties.get('folder.output');
         var targetName = properties.get('target.name');
         var targetFileType = properties.get('target.file.type');
         var targetFiles = getFiles(pathToInput, targetName, targetFileType);
+
+        pathToOutput += "\\" + dateFormat(now, "mm-dd-yyyy");
+
+        fs.mkdir(pathToOutput, function (err) {
+            if (err) {
+                console.log('ERROR: ' + err);
+            } else {
+                console.log("folder made!");
+            }
+        });
 
         if (targetFiles.length < 7) {
             console.log("We're not backed up!");
             return;
         }
-        
-        console.log("lots of judies!");
 
-//        var hbjs = require("handbrake-js");
-// 
-//hbjs.spawn({ input: "sample/poltergeist_1.mpg", output: "dope shit.m4v" })
-//  .on("error", function(err){
-//      console.log(err);
-//    // invalid user input, no video found etc 
-//  })
-//  .on("progress", function(progress){
-//    console.log(
-//      "Percent complete: %s, ETA: %s",
-//      progress.percentComplete,
-//      progress.eta
-//    );
-//  });
-//        fs.mkdir(dateFormat(now, "mm-dd-yyyy"), function (err) {
-//                if (err) {
-//                    console.log('ERROR: ' + err);
-//                } else {
-//                    console.log("folder made!");
-//                }
-//            });
+        encodeVideo(targetFiles, pathToOutput, pathToInput, targetFileType, properties.get('videos.jobCount.max'));
     });
 };
+
+function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount) {
+    fileCount--;
+    var target = filesToEncode.pop();
+    if (target !== undefined && fileCount > 0) {
+        var outputName = target.replace(targetFileType, properties.get('output.format'));
+        var encodingOptions = {
+            input: pathToInput + "\\" + target,
+            output: pathToOutput + "\\" + outputName,
+            height: properties.get('output.height'),
+            encoder: properties.get('output.encoder'),
+            rate: properties.get('output.frameRate'),
+            quality: properties.get('output.quality')
+        };
+
+        var hbjs = require("handbrake-js");
+        hbjs.spawn(encodingOptions)
+                .on("error", function (err) {
+                    console.log(err);
+                })
+                .on("progress", function (progress) {
+                    console.log(
+                            "Percent complete: %s, ETA: %s",
+                            progress.percentComplete,
+                            progress.eta
+                            );
+                })
+                .on("end", function () {
+                    console.log(target + " finished!");
+                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType);
+                });
+    } else {
+        console.log("Jobs complete!");
+    }
+}
 
 function getFiles(srcpath, targetName, targetFileType) {
     return fs.readdirSync(srcpath).filter(function (file) {
