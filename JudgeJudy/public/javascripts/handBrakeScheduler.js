@@ -14,32 +14,47 @@ module.exports.scheduleJob = function () {
             + properties.get('jobTime.month') + " "
             + properties.get('jobTime.day.of.week');
     var j = schedule.scheduleJob(cronString, function () {
-        var now = new Date();
 
-        var pathToInput = properties.get('folder.input');
-        var pathToOutput = properties.get('folder.output');
-        var targetName = properties.get('target.name');
-        var targetFileType = properties.get('target.file.type');
-        var targetFiles = getFiles(pathToInput, targetName, targetFileType);
+        var targetFiles = gatherTargetFiles();
 
-        pathToOutput += "\\" + dateFormat(now, "mm-dd-yyyy");
-
-        fs.mkdir(pathToOutput, function (err) {
-            if (err) {
-                console.log('ERROR: ' + err);
-            } else {
-                console.log("folder made!");
-            }
-        });
-
-        if (targetFiles.length < 7) {
+        if (targetFiles.length < properties.get('videos.jobCount.max')) {
             console.log("We're not backed up!");
             return;
         }
 
-        encodeVideo(targetFiles, pathToOutput, pathToInput, targetFileType, properties.get('videos.jobCount.max'));
+        startJob(properties.get('videos.jobCount.que'));
     });
 };
+
+function gatherTargetFiles() {
+    var pathToInput = properties.get('folder.input');
+    var targetName = properties.get('target.name');
+    var targetFileType = properties.get('target.file.type');
+    return getFiles(pathToInput, targetName, targetFileType);
+}
+
+function startJob(fileCount) {
+    var now = new Date();
+
+    var pathToOutput = properties.get('folder.output');
+
+    var pathToInput = properties.get('folder.input');
+    var targetName = properties.get('target.name');
+    var targetFileType = properties.get('target.file.type');
+    var targetFiles = getFiles(pathToInput, targetName, targetFileType);
+
+    pathToOutput += "\\" + dateFormat(now, "mm-dd-yyyy");
+
+    fs.mkdir(pathToOutput, function (err) {
+        if (err) {
+            console.log('ERROR: ' + err);
+        } else {
+            console.log("folder made!");
+        }
+    });
+
+    encodeVideo(targetFiles, pathToOutput, pathToInput, targetFileType, fileCount);
+}
 
 function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount) {
     fileCount--;
