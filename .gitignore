@@ -3,3 +3,4 @@ ScheduledVideoConverter/node_modules/*
 node_modules/
 *.mpg
 ScheduledVideoConverter/output/
+ScheduledVideoConverter/sample/
