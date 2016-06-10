@@ -76,15 +76,16 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
             rate: properties.get('output.frameRate'),
             quality: properties.get('output.quality')
         };
-
+        var percentageComplete = 0;
         var hbjs = require("handbrake-js");
         hbjs.spawn(encodingOptions)
                 .on("error", function (err) {
                     console.log(err);
                 })
                 .on("progress", function (progress) {
-                    if (progress.percentComplete / 10 === Math.floor(progress.percentComplete / 10))
+                    if (Math.floor(progress.percentComplete / 10) >  percentageComplete)
                     {
+                        percentageComplete++;
                         console.log(
                                 "Percent complete: %s, ETA: %s",
                                 progress.percentComplete,
