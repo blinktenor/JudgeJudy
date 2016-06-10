@@ -7,23 +7,29 @@ var path = require('path');
 
 
 module.exports.scheduleJob = function () {
-    var cronString = properties.get('jobTime.second') + " "
-            + properties.get('jobTime.minute') + " "
-            + properties.get('jobTime.hour') + " "
-            + properties.get('jobTime.day.of.month') + " "
-            + properties.get('jobTime.month') + " "
-            + properties.get('jobTime.day.of.week');
-    var j = schedule.scheduleJob(cronString, function () {
-
-        var targetFiles = gatherTargetFiles();
-
-        if (targetFiles.length < properties.get('videos.jobCount.max')) {
-            console.log("We're not backed up!");
-            return;
-        }
-
+    if (properties.get('auto.start') === true) {
+        console.log("Auto start!");
         startJob(properties.get('videos.jobCount.que'));
-    });
+    } else {
+        var cronString = properties.get('jobTime.second') + " "
+                + properties.get('jobTime.minute') + " "
+                + properties.get('jobTime.hour') + " "
+                + properties.get('jobTime.day.of.month') + " "
+                + properties.get('jobTime.month') + " "
+                + properties.get('jobTime.day.of.week');
+        console.log("starting job at " + cronString);
+        var j = schedule.scheduleJob(cronString, function () {
+
+            var targetFiles = gatherTargetFiles();
+
+            if (targetFiles.length < properties.get('videos.jobCount.max')) {
+                console.log("We're not backed up!");
+                return;
+            }
+
+            startJob(properties.get('videos.jobCount.que'));
+        });
+    }
 };
 
 function gatherTargetFiles() {
@@ -57,9 +63,10 @@ function startJob(fileCount) {
 }
 
 function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount) {
-    fileCount--;
+    console.log("files left to encode: " + fileCount);
     var target = filesToEncode.pop();
     if (target !== undefined && fileCount > 0) {
+        fileCount--;
         var outputName = target.replace(targetFileType, properties.get('output.format'));
         var encodingOptions = {
             input: pathToInput + "\\" + target,
@@ -76,15 +83,18 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
                     console.log(err);
                 })
                 .on("progress", function (progress) {
-                    console.log(
-                            "Percent complete: %s, ETA: %s",
-                            progress.percentComplete,
-                            progress.eta
-                            );
+                    if (progress.percentComplete / 10 === Math.floor(progress.percentComplete / 10))
+                    {
+                        console.log(
+                                "Percent complete: %s, ETA: %s",
+                                progress.percentComplete,
+                                progress.eta
+                                );
+                    }
                 })
                 .on("end", function () {
                     console.log(target + " finished!");
-                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType);
+                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount);
                 });
     } else {
         console.log("Jobs complete!");
