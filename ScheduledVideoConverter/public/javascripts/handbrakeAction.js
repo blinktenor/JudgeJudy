@@ -18,7 +18,6 @@ function startJob (fileCount) {
     var targetName = properties.get('target.name');
     var targetFileType = properties.get('target.file.type');
     var targetFiles = this.getFiles(pathToInput, targetName, targetFileType);
-    console.log(targetFiles);
     pathToOutput += "\\" + dateFormat(now, "mm-dd-yyyy");
     makeFolder(pathToOutput, 0, targetFiles, pathToOutput, pathToInput, targetFileType, fileCount);
 };
@@ -28,8 +27,6 @@ function makeFolder(path, tryCount, targetFiles, pathToOutput, pathToInput, targ
     if(tryCount !== 0) {
         folderPath = folderPath + "-" + tryCount;
     }
-    console.log("folderPath " + folderPath);
-                    console.log("files: " + targetFiles);
     fs.access(folderPath, fs.F_OK, function (err) {
         if (!err) {
             makeFolder(path, tryCount + 1, targetFiles, pathToOutput, pathToInput, targetFileType, fileCount);
@@ -38,9 +35,7 @@ function makeFolder(path, tryCount, targetFiles, pathToOutput, pathToInput, targ
                 if (err) {
                     console.log('ERROR: ' + err);
                 } else {
-                    console.log("folder made!");
-                    console.log("files: " + targetFiles);
-                    encodeVideo(targetFiles, pathToOutput, pathToInput, targetFileType, fileCount);
+                    encodeVideo(targetFiles, folderPath, pathToInput, targetFileType, fileCount);
                 }
             });
         }
@@ -48,7 +43,7 @@ function makeFolder(path, tryCount, targetFiles, pathToOutput, pathToInput, targ
 }
 
 function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount) {
-    console.log("files left to encode: " + fileCount);
+    var start = new Date().getTime();
     var target = filesToEncode.pop();
     if (target !== undefined && fileCount > 0) {
         fileCount--;
@@ -70,16 +65,21 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
                 .on("progress", function (progress) {
                     if (Math.floor(progress.percentComplete / 10) > percentageComplete)
                     {
+                        var end = new Date().getTime();
+                        var time = (end - start)/1000;
                         percentageComplete++;
                         console.log(
-                                "Percent complete: %s, ETA: %s",
+                                "Percent complete: %s, Elapsed: %s, ETA: %s",
                                 progress.percentComplete,
+                                time,
                                 progress.eta
                                 );
                     }
                 })
                 .on("end", function () {
-                    console.log(target + " finished!");
+                    var end = new Date().getTime();
+                    var time = (end - start)/1000;
+                    console.log(target + " finished in " + time);
                     if (properties.get('target.delete')) {
                         fs.unlink(pathToInput + "\\" + target, function (err) {
                             if (err)
@@ -95,7 +95,6 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
 }
 
 function getFiles (srcpath, targetName, targetFileType) {
-    console.log("getting files " + srcpath);
     return fs.readdirSync(srcpath).filter(function (file) {
         var fileName = file.toLowerCase();
         return !fs.statSync(path.join(srcpath, file)).isDirectory() &&
