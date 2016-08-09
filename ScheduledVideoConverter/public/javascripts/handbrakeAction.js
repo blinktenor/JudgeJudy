@@ -60,7 +60,8 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
         var hbjs = require("handbrake-js");
         hbjs.spawn(encodingOptions)
                 .on("error", function (err) {
-                    console.log(err);
+                    console.log("Errored on File -> Skipping");
+					encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount);
                 })
                 .on("progress", function (progress) {
                     if (Math.floor(progress.percentComplete / 10) > percentageComplete)
