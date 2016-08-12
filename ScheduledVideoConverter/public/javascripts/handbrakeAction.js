@@ -103,7 +103,11 @@ function moveBadFile(pathToInput, target)
     fs.readdir(unconvertableDir, function (err, files) {
         if (err)
             console.log(err);
-        fs.rename(pathToInput + "\\" + target, unconvertableDir + "\\unconvertable_" + files.length, function (err) {
+        var nextNumber = files.length + 1;
+        while(files.indexOf("unconvertable_" + nextNumber + "." + properties.get('target.file.type')) > -1) {
+            nextNumber += 1;
+        }
+        fs.rename(pathToInput + "\\" + target, unconvertableDir + "\\unconvertable_" + nextNumber + "." + properties.get('target.file.type'), function (err) {
             if (err)
                 console.log(err);
         });
@@ -120,6 +124,7 @@ function getFiles(srcpath, targetName, targetFileType) {
 }
 
 module.exports = {
+    moveBadFile: moveBadFile,
     getFiles: getFiles,
     startJob: startJob,
     gatherTargetFiles: gatherTargetFiles
