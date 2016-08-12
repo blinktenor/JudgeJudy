@@ -99,7 +99,7 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
 
 function moveBadFile(pathToInput, target)
 {
-    var unconvertableDir = properties.get('output.unconvertable.dir');
+    var unconvertableDir = properties.get('folder.unconvertable');
     fs.readdir(unconvertableDir, function (err, files) {
         if (err)
             console.log(err);
