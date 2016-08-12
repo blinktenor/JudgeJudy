@@ -27,6 +27,7 @@ function makeFolder(path, tryCount, targetFiles, pathToOutput, pathToInput, targ
     if(tryCount !== 0) {
         folderPath = folderPath + "-" + tryCount;
     }
+    //TODO read all of the folder names in the folder and then just increment the counter...
     fs.access(folderPath, fs.F_OK, function (err) {
         if (!err) {
             makeFolder(path, tryCount + 1, targetFiles, pathToOutput, pathToInput, targetFileType, fileCount);
@@ -61,7 +62,8 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
         hbjs.spawn(encodingOptions)
                 .on("error", function (err) {
                     console.log("Errored on File -> Skipping");
-					encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount);
+                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
+                    moveBadFile(pathToInput, target);
                 })
                 .on("progress", function (progress) {
                     if (Math.floor(progress.percentComplete / 10) > percentageComplete)
@@ -95,7 +97,20 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
     }
 }
 
-function getFiles (srcpath, targetName, targetFileType) {
+function moveBadFile(pathToInput, target)
+{
+    var unconvertableDir = properties.get('output.unconvertable.dir');
+    fs.readdir(unconvertableDir, function (err, files) {
+        if (err)
+            console.log(err);
+        fs.rename(pathToInput + "\\" + target, unconvertableDir + "\\unconvertable_" + files.length, function (err) {
+            if (err)
+                console.log(err);
+        });
+    });
+}
+
+function getFiles(srcpath, targetName, targetFileType) {
     return fs.readdirSync(srcpath).filter(function (file) {
         var fileName = file.toLowerCase();
         return !fs.statSync(path.join(srcpath, file)).isDirectory() &&
