@@ -60,6 +60,12 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
         var percentageComplete = 0;
         var hbjs = require("handbrake-js");
         hbjs.spawn(encodingOptions)
+                .on("start", function () {
+                    console.log("Starting " + target);
+                })
+                .on("begin", function () {
+                    console.log("Beginning " + target);
+                })
                 .on("error", function (err) {
                     console.log("Errored on File -> Skipping");
                     encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
@@ -91,6 +97,11 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
                         });
                     }
                     encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount);
+                })
+                .on("complete", function () {
+                    console.log("completed without proper finishing!");
+                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
+                    moveBadFile(pathToInput, target);
                 });
     } else {
         console.log("Jobs complete!");
