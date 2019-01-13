@@ -60,69 +60,67 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
         var percentageComplete = 0;
         var hbjs = require("handbrake-js");
         hbjs.spawn(encodingOptions)
-                .on("start", function () {
-                    console.log("Starting " + target);
-                })
-                .on("begin", function () {
-                    console.log("Beginning " + target);
-                })
-                .on("error", function (err) {
-                    console.log("Errored on File -> Skipping");
-                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
-                    moveBadFile(pathToInput, target);
-                })
-                .on("progress", function (progress) {
-                    if (Math.floor(progress.percentComplete / 10) > percentageComplete)
-                    {
-                        var end = new Date().getTime();
-                        var time = (end - start)/1000;
-                        percentageComplete++;
-                        console.log(
-                                "Percent complete: %s, Elapsed: %s, ETA: %s",
-                                progress.percentComplete,
-                                time,
-                                progress.eta
-                                );
-                    }
-                })
-                .on("end", function () {
-                    var end = new Date().getTime();
-                    var time = (end - start)/1000;
-                    console.log(target + " finished in " + time);
-                    if (properties.get('target.delete')) {
-                        fs.unlink(pathToInput + "\\" + target, function (err) {
-                            if (err)
-                                throw err;
-                            console.log('Successfully deleted ' + target);
-                        });
-                    }
-                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount);
-                })
-                .on("complete", function () {
-                    console.log("completed without proper finishing!");
-                    encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
-                    moveBadFile(pathToInput, target);
-                });
+			.on("start", function () {
+				console.log("Starting " + target);
+			})
+			.on("begin", function () {
+				console.log("Beginning " + target);
+			})
+			.on("error", function (err) {
+				console.log("Errored on File -> Skipping");
+				encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
+				moveBadFile(pathToInput, target);
+			})
+			.on("progress", function (progress) {
+				if (Math.floor(progress.percentComplete / 10) > percentageComplete) {
+					var end = new Date().getTime();
+					var time = (end - start)/1000;
+					percentageComplete++;
+					console.log(
+						"Percent complete: %s, Elapsed: %s, ETA: %s",
+						progress.percentComplete,
+						time,
+						progress.eta
+						);
+				}
+			})
+			.on("end", function () {
+				var end = new Date().getTime();
+				var time = (end - start)/1000;
+				console.log(target + " finished in " + time);
+				if (properties.get('target.delete')) {
+					fs.unlink(pathToInput + "\\" + target, function (err) {
+						if (err)
+							throw err;
+						console.log('Successfully deleted ' + target);
+					});
+				}
+				encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
+			})
+			.on("complete", function () {
+				console.log("Completed. This file may be incorrect.");
+			});
     } else {
         console.log("Jobs complete!");
     }
 }
 
-function moveBadFile(pathToInput, target)
-{
+function moveBadFile(pathToInput, target) {
     var unconvertableDir = properties.get('folder.unconvertable');
-    fs.readdir(unconvertableDir, function (err, files) {
-        if (err)
-            console.log(err);
-        var nextNumber = files.length + 1;
-        while(files.indexOf("unconvertable_" + nextNumber + "." + properties.get('target.file.type')) > -1) {
-            nextNumber += 1;
-        }
-        fs.rename(pathToInput + "\\" + target, unconvertableDir + "\\unconvertable_" + nextNumber + "." + properties.get('target.file.type'), function (err) {
-            if (err)
-                console.log(err);
-        });
-    });
+	fs.mkdir(unconvertableDir, function (err) {
+		fs.readdir(unconvertableDir, function (err, files) {
+			if (err)
+				console.log(err);
+			var nextNumber = files.length + 1;
+			while(files.indexOf("unconvertable_" + nextNumber + "." + properties.get('target.file.type')) > -1) {
+				nextNumber += 1;
+			}
+			fs.rename(pathToInput + "\\" + target, unconvertableDir + "\\unconvertable_" + nextNumber + "." + properties.get('target.file.type'), function (err) {
+				if (err)
+					console.log(err);
+			});
+		});
+	});
 }
 
 function getFiles(srcpath, targetName, targetFileType) {
