@@ -5,3 +5,4 @@ node_modules/
 ScheduledVideoConverter/output/
 ScheduledVideoConverter/sample/
 ScheduledVideoConverter/unconvertable/
+ScheduledVideoConverter/output.txt
