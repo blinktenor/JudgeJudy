@@ -23,6 +23,7 @@ function startJob (fileCount) {
 };
 
 function makeFolder(path, tryCount, targetFiles, pathToOutput, pathToInput, targetFileType, fileCount) {
+	console.log("Trycount: " + tryCount + "\n");
     var folderPath = path;
     if(tryCount !== 0) {
         folderPath = folderPath + "-" + tryCount;
@@ -34,7 +35,7 @@ function makeFolder(path, tryCount, targetFiles, pathToOutput, pathToInput, targ
         } else {
             fs.mkdir(folderPath, function (err) {
                 if (err) {
-                    console.log('ERROR: ' + err);
+                    console.log('ERROR: ' + err + "\n");
                 } else {
                     encodeVideo(targetFiles, folderPath, pathToInput, targetFileType, fileCount);
                 }
@@ -44,6 +45,7 @@ function makeFolder(path, tryCount, targetFiles, pathToOutput, pathToInput, targ
 }
 
 function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount) {
+	console.log("Starting file: " + target + "\n");
     var start = new Date().getTime();
     var target = filesToEncode.pop();
     if (target !== undefined && fileCount > 0) {
@@ -61,13 +63,13 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
         var hbjs = require("handbrake-js");
         hbjs.spawn(encodingOptions)
 			.on("start", function () {
-				console.log("Starting " + target);
+				console.log("Starting " + target + "\n");
 			})
 			.on("begin", function () {
-				console.log("Beginning " + target);
+				console.log("Beginning " + target + "\n");
 			})
 			.on("error", function (err) {
-				console.log("Errored on File -> Skipping");
+				console.log("Errored on File -> Skipping " + target + "\n");
 				encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
 				moveBadFile(pathToInput, target);
 			})
@@ -87,21 +89,21 @@ function encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, f
 			.on("end", function () {
 				var end = new Date().getTime();
 				var time = (end - start)/1000;
-				console.log(target + " finished in " + time);
+				console.log(target + " finished in " + time + "\n");
 				if (properties.get('target.delete')) {
 					fs.unlink(pathToInput + "\\" + target, function (err) {
 						if (err)
 							throw err;
-						console.log('Successfully deleted ' + target);
+						console.log('Successfully deleted ' + target + "\n");
 					});
 				}
 				encodeVideo(filesToEncode, pathToOutput, pathToInput, targetFileType, fileCount + 1);
 			})
 			.on("complete", function () {
-				console.log("Completed. This file may be incorrect.");
+				console.log("Completed. This file may be incorrect.\n");
 			});
     } else {
-        console.log("Jobs complete!");
+        console.log("Jobs complete!\n");
     }
 }
 
